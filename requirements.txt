@@ -1,0 +1,6 @@
+ipykernel
+numpy
+scipy
+cvxpy
+matplotlib
+pyscipopt
