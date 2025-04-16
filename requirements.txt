@@ -4,3 +4,5 @@ scipy
 cvxpy
 matplotlib
 pyscipopt
+networkx
+graphillion
