@@ -64,7 +64,32 @@ def construct(nodes, adj) -> set:
     return sol
 
 
-def find_add(nodes, adj, sol, b, tabu, tabulen, iteration):
+def find_add(nodes, adj, sol, b, tabu, tabulen, iteration) -> int:
+    """暫定解(実行可能解)に新たに加える頂点をタブーリスト以外から探索して返す．
+    更新後の解が制約違反となる可能性があり，その場合は違反度合いが最小となるように選ぶ．
+
+    Parameters
+    ----------
+    nodes : list
+        ノード集合
+    adj : dict
+        各ノードの隣接ノード集合
+    sol : set
+        暫定解
+    b : list
+        元のグラフの各頂点に対する，解の中で隣接する頂点の数
+    tabu : dict
+        タブーリスト
+    tabulen : int
+        タブーリストの長さ
+    iteration : int
+        現在の反復回数
+
+    Returns
+    -------
+    int
+        解に追加する頂点のインデックス
+    """
     xdelta = Infinity
     istar = []
     for i in set(nodes) - sol:
@@ -75,17 +100,42 @@ def find_add(nodes, adj, sol, b, tabu, tabulen, iteration):
                 istar = [i]
             elif delta == xdelta:
                 istar.append(i)
-    
+
     if istar != []:
         return random.choice(istar)
-    
+
     print("blocked, no non-tabu move")
     for i in nodes:
         tabu[i] = min(tabu[i], iteration)
     return find_add(nodes, adj, sol, b, tabu, tabulen, iteration)
 
 
-def find_drop(nodes, adj, sol, b, tabu, tabulen, iteration):
+def find_drop(nodes, adj, sol, b, tabu, tabulen, iteration) -> int:
+    """暫定解(実行不能解)から削除する頂点をタブーリスト以外から探索して返す．
+    更新後の解の制約違反度合いが最小となるように選ぶ．
+
+    Parameters
+    ----------
+    nodes : list
+        ノード集合
+    adj : dict
+        各ノードの隣接ノード集合
+    sol : set
+        暫定解
+    b : list
+        元のグラフの各頂点に対する，解の中で隣接する頂点の数
+    tabu : dict
+        タブーリスト
+    tabulen : int
+        タブーリストの長さ
+    iteration : int
+        現在の反復回数
+
+    Returns
+    -------
+    int
+        解に追加する頂点のインデックス
+    """
     xdelta = -Infinity
     istar = []
     for i in sol:
@@ -99,15 +149,41 @@ def find_drop(nodes, adj, sol, b, tabu, tabulen, iteration):
 
     if istar != []:
         return random.choice(istar)
-    
+
     print("blocked, no non-tabu move")
     for i in nodes:
         tabu[i] = min(tabu[i], iteration)
-    
+
     return find_drop(nodes, adj, sol, b, tabu, tabulen, iteration)
 
 
-def move_in(nodes, adj, sol, b, tabu, tabuIN, tabuOUT, iteration):
+def move_in(nodes, adj, sol, b, tabu, tabuIN, tabuOUT, iteration) -> int:
+    """実行可能解に頂点を加える
+
+    Parameters
+    ----------
+    nodes : list
+        ノード集合
+    adj : dict
+        各ノードの隣接ノード集合
+    sol : set
+        暫定解
+    b : list
+        元のグラフの各頂点に対する，解の中で隣接する頂点の数
+    tabu : dict
+        タブーリスト
+    tabuIN : int
+        解に頂点を加える際のタブーリストの長さ
+    tabuOUT : int
+        解から頂点を削除する際のタブーリストの長さ
+    iteration : int
+        現在の反復回数
+
+    Returns
+    -------
+    int
+        違反度合いの差分
+    """
     i = find_add(nodes, adj, sol, b, tabu, tabuOUT, iteration)
     tabu[i] = iteration + tabuIN
     sol.add(i)
@@ -120,7 +196,33 @@ def move_in(nodes, adj, sol, b, tabu, tabuIN, tabuOUT, iteration):
     return delta_infeas
 
 
-def move_out(nodes, adj, sol, b, tabu, tabuIN, tabuOUT, iteration):
+def move_out(nodes, adj, sol, b, tabu, tabuIN, tabuOUT, iteration) -> int:
+    """実行不能解から頂点を削除する
+
+    Parameters
+    ----------
+    nodes : list
+        ノード集合
+    adj : dict
+        各ノードの隣接ノード集合
+    sol : set
+        暫定解
+    b : list
+        元のグラフの各頂点に対する，解の中で隣接する頂点の数
+    tabu : dict
+        タブーリスト
+    tabuIN : int
+        解に頂点を加える際のタブーリストの長さ
+    tabuOUT : int
+        解から頂点を削除する際のタブーリストの長さ
+    iteration : int
+        現在の反復回数
+
+    Returns
+    -------
+    int
+        違反度合いの差分
+    """
     i = find_drop(nodes, adj, sol, b, tabu, tabuIN, iteration)
 
     tabu[i] = iteration + tabuOUT
@@ -135,6 +237,28 @@ def move_out(nodes, adj, sol, b, tabu, tabuIN, tabuOUT, iteration):
 
 
 def tabu_search(nodes, adj, sol, max_iter, tabulen, report=None):
+    """タブーサーチを実行する
+
+    Parameters
+    ----------
+    nodes : list
+        ノード集合
+    adj : dict
+        各ノードの隣接ノード集合
+    sol : set
+        暫定解
+    max_iter : int
+        反復回数
+    tabulen : int
+        タブーリストの長さ
+    report : callable, optional
+        print など, by default None
+
+    Returns
+    -------
+    tuple
+        Best solution found and its cardinality
+    """
     n = len(nodes)
     tabu = [0 for i in nodes]
 
@@ -144,7 +268,7 @@ def tabu_search(nodes, adj, sol, max_iter, tabulen, report=None):
 
     if LOG:
         print(f"iter: 0 \tcard: {card} ({infeas} conflicts) \tbest: {bestcard}")
-    
+
     for it in range(max_iter):
         tabuIN = 1 + int(tabulen/100 * card)
         tabuOUT = 1 + int(tabulen/100 * (n-card))
@@ -159,7 +283,7 @@ def tabu_search(nodes, adj, sol, max_iter, tabulen, report=None):
             bestsol, bestcard = set(sol), card
             if report:
                 report(card, "iter:", it)
-            
+
         if LOG:
             print(f"iter: {it+1} \tcard: {card} ({infeas} conflicts) \tbest: {bestcard}")
 
@@ -171,12 +295,28 @@ def tabu_search(nodes, adj, sol, max_iter, tabulen, report=None):
 
 # Tabu search with diversification & intensification
 
-def diversify(nodes, adj, v):
+def diversify(nodes, adj, v) -> set:
+    """指定された頂点を含む極大なクリークをランダムに返す
+
+    Parameters
+    ----------
+    nodes : list
+        ノード集合
+    adj : dict
+        各ノードの隣接ノード集合
+    v : int
+        頂点のインデックス
+
+    Returns
+    -------
+    set
+        極大クリーク
+    """
     b = [0 for i in nodes]
     sol = set([v])
     for j in adj[v]:
         b[j] += 1
-    
+
     indices = list(nodes)
     random.shuffle(indices)
     for ii in nodes:
@@ -190,6 +330,31 @@ def diversify(nodes, adj, v):
 
 
 def ts_intens_divers(nodes, adj, sol, max_iter, tabulen, report=None):
+    """集中化と多様化を取り入れたタブーサーチを実行する．
+    集中化ではそれまでに発見した最良解を暫定解に設定して探索する．
+    多様化では最もタブーから遠い頂点を含む極大クリークを暫定解に設定して探索する．
+    適当な反復回数(スイッチするたびに増加させる)で解の更新がなければ集中化と多様化をスイッチする．
+
+    Parameters
+    ----------
+    nodes : list
+        ノード集合
+    adj : dict
+        各ノードの隣接ノード集合
+    sol : set
+        暫定解
+    max_iter : int
+        反復回数
+    tabulen : int
+        タブーリストの長さ
+    report : callable, optional
+        print など, by default None
+
+    Returns
+    -------
+    tuple
+        Best solution found and its cardinality
+    """
     n = len(nodes)
     tabu = [0 for i in nodes]
 
@@ -229,7 +394,7 @@ def ts_intens_divers(nodes, adj, sol, max_iter, tabulen, report=None):
             count = 0
         else:
             count += 1
-        
+
         if count > D:
             if D%2==0:
                 if LOG:
@@ -244,6 +409,7 @@ def ts_intens_divers(nodes, adj, sol, max_iter, tabulen, report=None):
                 for j in set(nodes) - sol:
                     if tabu[j] < mintabu:
                         cand = [j]
+                        mintabu = tabu[j] # 久保-Pedroso のコードにはこの行がない．バグと思われるため追加．
                     if tabu[j] == mintabu:
                         cand.append(j)
                 v = random.choice(cand)
@@ -255,10 +421,10 @@ def ts_intens_divers(nodes, adj, sol, max_iter, tabulen, report=None):
                     if report:
                         report(card, "iter:", it)
                 tabu = [min(tabu[i], it) for i in nodes]
-            
+
             count = 0
             D += 1
-        
+
         if infeas == 0:
             lastcard = card
 
@@ -271,7 +437,21 @@ def ts_intens_divers(nodes, adj, sol, max_iter, tabulen, report=None):
 # Plateau-search
 # Escape from large plataeu (set of solutions with same objective) in maximum stable set problem.
 
-def possible_add(rmn: set, b):
+def possible_add(rmn: set, b) -> list:
+    """暫定解に追加する頂点の候補の集合から，追加しても制約を満たす部分集合(のindicator)を取り出す
+
+    Parameters
+    ----------
+    rmn : set
+        暫定解に追加する頂点の候補の集合
+    b : list
+        元のグラフの各頂点に対する，解の中で隣接する頂点の数
+
+    Returns
+    -------
+    list
+        `rmn` のうち追加しても制約を満たす頂点を集めた部分集合のindicator
+    """
     return [i for i in rmn if b[i] == 0]
 
 
@@ -279,14 +459,40 @@ def one_edge(rmn, b):
     return [i for i in rmn if b[i] == 1]
 
 
-def add_node(i, adj, sol, rmn, b):
+def add_node(i: int, adj: dict, sol: set, rmn: set, b: dict):
     sol.add(i)
     rmn.remove(i)
     for j in adj[i]:
         b[j] += 1
 
 
-def expand_rand(add, sol, rmn, b, adj, maxiter, dummy=None):
+# 3種類の expand function を定義する
+
+def expand_rand(add, sol, rmn, b, adj, maxiter, dummy=None) -> int:
+    """暫定解に加える頂点の候補の集合 `add` をランダムに大きくする
+
+    Parameters
+    ----------
+    add : set
+        暫定解に加える頂点の候補の集合
+    sol : set
+        暫定解
+    rmn : set
+        暫定解に含まれない頂点の集合
+    b : list
+        元のグラフの各頂点に対する，解の中で隣接する頂点の数
+    adj : dict
+        各ノードの隣接ノード集合
+    maxiter : int
+        反復回数の上限
+    dummy : None, optional
+        何も起きない．他の関数とのインターフェースを合わせるためのダミー引数．
+
+    Returns
+    -------
+    int
+        消費した反復回数
+    """
     iteration = 0
     while add != [] and iteration < maxiter:
         iteration += 1
@@ -297,7 +503,31 @@ def expand_rand(add, sol, rmn, b, adj, maxiter, dummy=None):
     return iteration
 
 
-def expand_stat_deg(add, sol, rmn, b, adj, maxiter, degree):
+def expand_stat_deg(add, sol, rmn, b, adj, maxiter, degree) -> int:
+    """暫定解に加える頂点の候補の集合 `add` を，次数が低い頂点から選ぶようにして大きくする
+
+    Parameters
+    ----------
+    add : set
+        暫定解に加える頂点の候補の集合
+    sol : set
+        暫定解
+    rmn : set
+        暫定解に含まれない頂点の集合
+    b : list
+        元のグラフの各頂点に対する，解の中で隣接する頂点の数
+    adj : dict
+        各ノードの隣接ノード集合
+    maxiter : int
+        反復回数の上限
+    degree : dict
+        各ノードの次数
+
+    Returns
+    -------
+    int
+        消費した反復回数
+    """
     iteration = 0
     while add != [] and iteration < maxiter:
         iteration += 1
@@ -316,7 +546,32 @@ def expand_stat_deg(add, sol, rmn, b, adj, maxiter, degree):
     return iteration
 
 
-def expand_dyn_deg(add, sol, rmn, b, adj, maxiter, dummy=None):
+def expand_dyn_deg(add, sol, rmn, b, adj, maxiter, dummy=None) -> int:
+    """暫定解に加える頂点の候補の集合 `add` を，次数が低い頂点から選ぶようにして大きくする．
+    このとき次数は `add` に含まれる頂点との結合数を数え，`add` の更新に従って動的に更新する．
+
+    Parameters
+    ----------
+    add : set
+        暫定解に加える頂点の候補の集合
+    sol : set
+        暫定解
+    rmn : set
+        暫定解に含まれない頂点の集合
+    b : list
+        元のグラフの各頂点に対する，解の中で隣接する頂点の数
+    adj : dict
+        各ノードの隣接ノード集合
+    maxiter : int
+        反復回数の上限
+    dummy : None, optional
+        何も起きない．他の関数とのインターフェースを合わせるためのダミー引数．
+
+    Returns
+    -------
+    int
+        消費した反復回数
+    """
     iteration = 0
     degree = {}
     for i in add:
@@ -337,7 +592,7 @@ def expand_dyn_deg(add, sol, rmn, b, adj, maxiter, dummy=None):
         for j in set(add) & adj[i]:
             for k in set(add) & adj[i]:
                 degree[k] -= 1
-        
+
         add_node(i, adj, sol, rmn, b)
         add.remove(i)
         add = possible_add(add, b)
@@ -346,6 +601,15 @@ def expand_dyn_deg(add, sol, rmn, b, adj, maxiter, dummy=None):
 
 
 def iterated_expansion(nodes, adj, expand_fn, niterations, report=None):
+    """Do repeated expansions until reaching 'niterations'.
+    Expansion is done using the function 'expand_fn' coming as
+    a parameter.
+
+    Parameters:
+     * nodes, adj -- graph information
+     * expand_fn -- function to be used for the expansion
+     * niterations -- maximum number of iterations
+    """
     degree = [len(adj[i]) for i in nodes]
     bestcard = 0
     iteration = 0
@@ -367,7 +631,11 @@ def iterated_expansion(nodes, adj, expand_fn, niterations, report=None):
 
 
 def node_replace(v, sol, rmn, b, adj):
-    connected = adj[v].intersection(sol) # intersection は set function?
+    """Node 'v' has been inserted in 'sol' and created one conflict.
+    Remove the conflicting node (the one in 'sol' adjacent to 'v'),
+    update 'b', and the check through which nodes expansion is possible.
+    """
+    connected = adj[v].intersection(sol)
     i = connected.pop()
     rmn.add(i)
     sol.remove(i)
@@ -380,6 +648,11 @@ def node_replace(v, sol, rmn, b, adj):
 
 
 def plateau(sol, rmn, b, adj, maxiter):
+    """Check nodes that create one conflict if inserted in the stable set;
+    tentatively add them, and remove the conflict created.
+    Exit whenever the stable set can be expanded (and return the
+    subset of nodes usable for that).
+    """
     iteration = 0
     while iteration < maxiter:
         one = one_edge(rmn, b)
@@ -391,11 +664,19 @@ def plateau(sol, rmn, b, adj, maxiter):
         expand_nodes = node_replace(v, sol, rmn, b, adj)
         if expand_nodes != []:
             return iteration, expand_nodes
-        
+
     return iteration, []
 
 
 def multistart_local_search(nodes, adj, expand_fn, niterations, length, report=None):
+    """Plateau search, using 'expand_fn' for the expansion.
+
+    Parameters:
+     * nodes, adj -- graph information
+     * expand_fn -- function to be used for the expansion
+     * niterations -- maximum number of iterations
+     * length -- number of searches to do attempt on the each plateau
+    """
     degree = [len(adj[i]) for i in nodes]
     bestsol = []
     bestrmn = []
@@ -426,7 +707,7 @@ def multistart_local_search(nodes, adj, expand_fn, niterations, length, report=N
             if LOG:
                 print("plateau phase...", len(sol))
                 print(f"\t\titer:{iteration}\t{len(sol)}/{bestcard}")
-    
+
     return bestsol, bestrmn, bestcard
 
 
@@ -518,7 +799,6 @@ def ltm_search(nodes, adj, expand_fn, niterations, length, report=None):
             if LOG:
                 print( "plateau phase...", len(sol))
                 print( '\t\titer:%d\t%d/%d' % (iteration, len(sol), bestcard))
-
 
     return bestsol, bestrmn, bestcard
 
