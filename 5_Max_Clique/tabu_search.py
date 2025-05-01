@@ -388,8 +388,8 @@ def ts_intens_divers(nodes, adj, sol, max_iter, tabulen, report=None):
                 report(card, "iter:", it)
             if LOG:
                 print("*** intensifying: clearing tabu list ***")
-                tabu = [min(tabu[i], it) for i in nodes]
-                count = 0
+            tabu = [min(tabu[i], it) for i in nodes]
+            count = 0
         elif infeas == 0 and card > lastcard:
             count = 0
         else:

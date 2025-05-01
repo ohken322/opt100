@@ -6,3 +6,4 @@ matplotlib
 pyscipopt
 networkx
 graphillion
+discrete-optimization
